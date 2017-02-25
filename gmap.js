@@ -193,7 +193,7 @@ function OlMap_GmapControl(ControlDiv, gmap) {
     var imageLayer = new ol.layer.Image({
         opacity: 0.75,
         source: new ol.source.ImageStatic({
-            url: 'data/openlayers显示图片.jpg',
+            url: 'openlayers显示图片.jpg',
             imageSize: [780, 684],
             projection: olmap.getView().getProjection(),
             imageExtent: ol.extent.applyTransform([131.3058, 44.4338, 133.4427, 45.7522], ol.proj.getTransform("EPSG:4326", "EPSG:3857"))
