@@ -11,47 +11,13 @@ function OlMap_GmapControl(ControlDiv, gmap) {
     var olMapDiv = document.createElement('div');
     olMapDiv.id = "olMapDiv";
 
-    var style = new ol.style.Style({
-        fill: new ol.style.Fill({
-            color: 'rgba(255, 255, 255, 0.1)'
-        }),
-        stroke: new ol.style.Stroke({
-            color: '#FFFF00',
-            width: 1
-        }),
-        text: new ol.style.Text({
-            font: '12px Calibri,sans-serif',
-            fill: new ol.style.Fill({
-                color: '#000'
-            }),
-            stroke: new ol.style.Stroke({
-                color: '#fff',
-                width: 3
-            })
-        })
-    });
-
-
-    var geojsonObject = 'data/852English.geojson';
-    var vectorLayer = new ol.layer.Vector({
-        source: new ol.source.Vector({
-            //测试用，就用了python的http.server
-            url: 'https://gist.githubusercontent.com/Theropod/0c921843d7126edfccd6b670f0c53edd/raw/2f87db27b47d1b853f815f34a65ee98c7bede97e/map.geojson',
-            format: new ol.format.GeoJSON()
-        }),
-        style: function(feature, resolution) {
-            // style.getText().setText(resolution < 5000 ? feature.get('name') : '');
-            return style;
-        }
-    });
-
     var view = new ol.View({
         // make sure the view doesn't go beyond the 22 zoom levels of Google Maps
         maxZoom: 21,
         projection: 'EPSG:3857', //EPSG:4326代表WGS84下的经纬度坐标，但是这样用的话地图会变扁（它仅仅是地理坐标系）。默认的情况是WGS84 Web Mercator EPSG:3857，这个是投影坐标系。
         //这个是(120°E,40°N)的投影坐标。先longtitude后latitude，和google map的坐标定义正相反
         //初始view的位置
-        center: [13358338.8952, 4865942.2795],
+        center: [14787201.743938, 5834170.710267],
         zoom: 8
     });
     view.on('change:center', function() {
@@ -71,9 +37,9 @@ function OlMap_GmapControl(ControlDiv, gmap) {
         gmap.setZoom(view.getZoom());
     });
 
-    //map
+    //map-----------------------------------------------------------------------
+
     var olmap = new ol.Map({
-        layers: [vectorLayer],
         interactions: ol.interaction.defaults({
             altShiftDragRotate: false,
             dragPan: false,
@@ -85,11 +51,166 @@ function OlMap_GmapControl(ControlDiv, gmap) {
         view: view
     });
 
+    //VectorTileLayer-----------------------------------------------------------------------
+
+    var replacer = function(key, value) {
+        if (value.geometry) {
+            var type;
+            var rawType = value.type;
+            var geometry = value.geometry;
+
+            if (rawType === 1) {
+                type = geometry.length === 1 ? 'Point' : 'MultiPoint';
+            } else if (rawType === 2) {
+                type = geometry.length === 1 ? 'LineString' : 'MultiLineString';
+            } else if (rawType === 3) {
+                type = geometry.length === 1 ? 'Polygon' : 'MultiPolygon';
+            }
+
+            return {
+                'type': 'Feature',
+                'geometry': {
+                    'type': type,
+                    'coordinates': geometry.length == 1 ? geometry : [geometry]
+                },
+                'properties': value.tags
+            };
+        } else {
+            return value;
+        }
+    };
+
+    var tilePixels = new ol.proj.Projection({
+        code: 'TILE_PIXELS',
+        units: 'tile-pixels'
+    });
+
+    var VectorTileStyle = new ol.style.Style({
+        fill: new ol.style.Fill({
+            color: 'transparent'
+        }),
+        stroke: new ol.style.Stroke({
+            color: '#FFFF00',
+            width: 1
+        }),
+        text: new ol.style.Text({
+            font: '12px Calibri,sans-serif',
+            fill: new ol.style.Fill({
+                color: 'transparent'
+            }),
+            stroke: new ol.style.Stroke({
+                color: 'transparent',
+                width: 3
+            })
+        })
+    });
+
+    var VectorTileLayer
+    var url = 'https://gist.githubusercontent.com/Theropod/0c921843d7126edfccd6b670f0c53edd/raw/2f87db27b47d1b853f815f34a65ee98c7bede97e/map.geojson';
+    fetch(url).then(function(response) {
+        return response.json();
+    }).then(function(json) {
+        //来自geojson-vt的方法
+        var tileIndex = geojsonvt(json, {
+            //在开源项目上有一个确定缩放等级的网页
+            maxZoom: 14, // max zoom to preserve detail on
+            tolerance: 3, // simplification tolerance (higher means simpler)
+            extent: 4096, // tile extent (both width and height)
+            buffer: 64, // tile buffer on each side
+            debug: 0, // logging level (0 to disable, 1 or 2)
+
+            indexMaxZoom: 11, // max zoom in the initial tile index
+            indexMaxPoints: 100000, // max number of points per tile in the index
+            solidChildren: false // whether to include solid tile children in the index
+        });
+        var vectorSource = new ol.source.VectorTile({
+            format: new ol.format.GeoJSON(),
+            tileGrid: ol.tilegrid.createXYZ(),
+            tilePixelRatio: 16,
+            //这个loadFunction本来是要用url来获取data的，但是这里的不需要，没有这个参数了。
+            tileLoadFunction: function(tile) {
+                var format = tile.getFormat();
+                var tileCoord = tile.getTileCoord();
+                var data = tileIndex.getTile(tileCoord[0], tileCoord[1], -tileCoord[2] - 1);
+
+                var features = format.readFeatures(
+                    JSON.stringify({
+                        type: 'FeatureCollection',
+                        features: data ? data.features : []
+                    }, replacer));
+                tile.setLoader(function() {
+                    tile.setFeatures(features);
+                    tile.setProjection(tilePixels);
+                });
+            },
+            url: 'data:' // arbitrary url, we don't use it in the tileLoadFunction
+        });
+        VectorTileLayer = new ol.layer.VectorTile({
+            source: vectorSource,
+            style: VectorTileStyle
+        });
+        olmap.addLayer(VectorTileLayer);
+        VectorTileLayer.setZIndex(2);
+    });
+
+    //Vectorlayer-----------------------------------------------------------------------
+
+    //不显示的那一层geojson的style，全是transparent
+    var style_vector = new ol.style.Style({
+        fill: new ol.style.Fill({
+            color: 'transparent'
+        }),
+        stroke: new ol.style.Stroke({
+            color: 'transparent'
+        }),
+        text: new ol.style.Text({
+            font: '12px Calibri,sans-serif',
+            fill: new ol.style.Fill({
+                color: 'transparent'
+            }),
+            stroke: new ol.style.Stroke({
+                color: 'transparent',
+                width: 3
+            })
+        })
+    });
+
+    var VectorLayer = new ol.layer.Vector({
+        source: new ol.source.Vector({
+            //测试用，就用了github的gist
+            url: 'https://gist.githubusercontent.com/Theropod/0c921843d7126edfccd6b670f0c53edd/raw/2f87db27b47d1b853f815f34a65ee98c7bede97e/map.geojson',
+            format: new ol.format.GeoJSON()
+        }),
+        style: style_vector
+    });
+
+    olmap.addLayer(VectorLayer);
+    //设置一下显示顺序
+    VectorLayer.setZIndex(3);
+
+    //ImageLayer-----------------------------------------------------------------------
+
+    var imageLayer = new ol.layer.Image({
+        opacity: 0.75,
+        source: new ol.source.ImageStatic({
+            url: 'data/openlayers显示图片.jpg',
+            imageSize: [780, 684],
+            projection: olmap.getView().getProjection(),
+            imageExtent: ol.extent.applyTransform([131.3058, 44.4338, 133.4427, 45.7522], ol.proj.getTransform("EPSG:4326", "EPSG:3857"))
+        })
+    });
+
+    olmap.addLayer(imageLayer);
+    imageLayer.setZIndex(1);
+
+    //controls-----------------------------------------------------------------------   
 
     // 在viewport节点下添加一个Card
     var viewport = olmap.getViewport();
     $(viewport).append(document.getElementById("card"));
 
+    //交互-----------------------------------------------------------------------
+    //临时Layer
     var highlightStyleCache = {};
     var featureOverlay = new ol.layer.Vector({
         source: new ol.source.Vector(),
@@ -104,8 +225,8 @@ function OlMap_GmapControl(ControlDiv, gmap) {
             if (!highlightStyleCache[text]) {
                 highlightStyleCache[text] = new ol.style.Style({
                     stroke: new ol.style.Stroke({
-                        color: '#f00',
-                        width: 1
+                        color: 'rgba(255,0,0,1)',
+                        width: 2
                     }),
                     //使鼠标放上去是透明的红色
                     fill: new ol.style.Fill({
@@ -127,8 +248,6 @@ function OlMap_GmapControl(ControlDiv, gmap) {
             return highlightStyleCache[text];
         }
     });
-
-    //事件响应
 
     var highlight;
     var displayFeatureInfo = function(pixel) {
@@ -177,10 +296,11 @@ function OlMap_GmapControl(ControlDiv, gmap) {
 function ShowingMap() {
     gmap = new google.maps.Map(document.getElementById('gmap'), {
         mapTypeId: 'satellite',
+        //刚打开的时候底图是这里的位置，除非在olmap中设置view的center和zoom之后再初始化一遍，因为只有olmap变了才触发事件。
         zoom: 8,
         center: {
-            lat: 40,
-            lng: 120
+            lat: 46.42,
+            lng: 132.54
         },
         disableDefaultUI: true,
         keyboardShortcuts: false,
