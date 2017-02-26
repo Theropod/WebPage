@@ -274,14 +274,14 @@ function OlMap_GmapControl(ControlDiv, gmap) {
             highlight = feature;
         }
     };
-
-    olmap.on('pointermove', function(evt) {
-        if (evt.dragging) {
-            return;
-        }
-        var pixel = olmap.getEventPixel(evt.originalEvent);
-        displayFeatureInfo(pixel);
-    });
+//在edge上面感觉有点慢，先取消这个事件
+//     olmap.on('pointermove', function(evt) {
+//         if (evt.dragging) {
+//             return;
+//         }
+//         var pixel = olmap.getEventPixel(evt.originalEvent);
+//         displayFeatureInfo(pixel);
+//     });
 
     olmap.on('click', function(evt) {
         displayFeatureInfo(evt.pixel);
