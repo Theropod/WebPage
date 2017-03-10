@@ -36,7 +36,8 @@ function OlMap_GmapControl(ControlDiv, gmap) {
         } else {}
         gmap.setZoom(view.getZoom());
     });
-
+    //再设置一遍center,否则google map 不更新的。
+    view.setCenter([14787201.743938, 5834170.710267]);
     //map-----------------------------------------------------------------------
 
     var olmap = new ol.Map({
@@ -90,7 +91,7 @@ function OlMap_GmapControl(ControlDiv, gmap) {
             color: 'transparent'
         }),
         stroke: new ol.style.Stroke({
-            color: '#FFFF00',
+            color: 'rgba(255,255,0,0.6)',
             width: 1
         }),
         text: new ol.style.Text({
@@ -113,7 +114,7 @@ function OlMap_GmapControl(ControlDiv, gmap) {
         //来自geojson-vt的方法
         var tileIndex = geojsonvt(json, {
             //在开源项目上有一个确定缩放等级的网页
-            maxZoom: 14, // max zoom to preserve detail on
+            maxZoom: 21, // max zoom to preserve detail on
             tolerance: 3, // simplification tolerance (higher means simpler)
             extent: 4096, // tile extent (both width and height)
             buffer: 64, // tile buffer on each side
@@ -193,7 +194,7 @@ function OlMap_GmapControl(ControlDiv, gmap) {
     var imageLayer = new ol.layer.Image({
         opacity: 0.75,
         source: new ol.source.ImageStatic({
-            url: 'https://raw.githubusercontent.com/Theropod/WebPage/gh-pages/data/openlayers显示图片.JPG',
+            url: 'data/openlayers显示图片.jpg',
             imageSize: [780, 684],
             projection: olmap.getView().getProjection(),
             imageExtent: ol.extent.applyTransform([131.3058, 44.4338, 133.4427, 45.7522], ol.proj.getTransform("EPSG:4326", "EPSG:3857"))
@@ -205,9 +206,80 @@ function OlMap_GmapControl(ControlDiv, gmap) {
 
     //controls-----------------------------------------------------------------------   
 
-    // 在viewport节点下添加一个Card
+    // 在viewport节点下添加一个InformatrionCard
+    $('#ControlDiv').append('<div id="LandInformation" class="card" style="width: 20rem;"></div>');
+    $('#LandInformation').append('<div id="LandInformationText" class="card-block"></div');
+    $('#LandInformationText').append('<h4 class="card-title">地块ID：</h4>');
+    $('#LandInformationText').append('<p id="info" class="card-text">&nbsp</p>');
+    $('#LandInformationText').append('<a href="#" class="btn btn-primary">也许需要一个链接</a>');
     var viewport = olmap.getViewport();
-    $(viewport).append(document.getElementById("card"));
+    $(viewport).append(document.getElementById("LandInformation"));
+
+    //echarts的图表
+    $('#ControlDiv').append('<div id="Charts" style="width: 600px;height:600px;"></div>');
+    $('#Charts').append('<div id="Line" style="width: 600px;height:300px;"></div>');
+    $('#Charts').append('<div id="Pie" style="width: 600px;height:300px;"></div>');
+
+    var data;
+    var dates = ["20170320", "20170420", "20170518", "20170528", "20170613"]
+    for (var i=0,len=dates.length; i<len; i++) {
+        var url = 'https://raw.githubusercontent.com/Theropod/WebPage/gh-pages/data/' + dates[i] + '农场1.json';
+        fetch(url).then(function(response) {
+            return response.json();
+        }).then(function(json) {
+            data = $.extend({}, json);
+        });
+    }
+    var LineChart = echarts.init(document.getElementById('Charts'));
+    var LineOption = {
+        title: {
+            text: '长势比较'
+        },
+        tooltip: {
+            trigger: 'axis'
+        },
+        toolbox: {
+            feature: {
+                saveAsImage: {}
+            }
+        },
+        xAxis: {
+            data: $.map(data,function(item) {
+                return item[6];
+            })
+        },
+        yAxis: {
+            type: 'value'
+        },
+        dataZoom: [{
+            startValue: '2017-05-18'
+        }, {
+            type: 'inside'
+        }],
+        series: [{
+                name: '今年长势',
+                type: 'line',
+            data: $.map(data,function(item) {
+                    return item[1];
+                })
+            },
+            {
+                name: '往年平均长势',
+                type: 'line',
+            data: $.map(data,function(item) {
+                    return item[2];
+                })
+            },
+            // {
+            //     name: '情况分类',
+            //     type: 'pie',
+            //  data: $.map(data,function(item) {
+            //         return item[3];
+            //     })
+            // }
+        ]
+    };
+
 
     //交互-----------------------------------------------------------------------
     //临时Layer
@@ -274,14 +346,14 @@ function OlMap_GmapControl(ControlDiv, gmap) {
             highlight = feature;
         }
     };
-//在edge上面感觉有点慢，先取消这个事件
-//     olmap.on('pointermove', function(evt) {
-//         if (evt.dragging) {
-//             return;
-//         }
-//         var pixel = olmap.getEventPixel(evt.originalEvent);
-//         displayFeatureInfo(pixel);
-//     });
+
+    // olmap.on('pointermove', function(evt) {
+    //     if (evt.dragging) {
+    //         return;
+    //     }
+    //     var pixel = olmap.getEventPixel(evt.originalEvent);
+    //     displayFeatureInfo(pixel);
+    // });
 
     olmap.on('click', function(evt) {
         displayFeatureInfo(evt.pixel);
