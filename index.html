@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <title>Map Viewer (3-column layout)</title>
+    <link rel="stylesheet" href="https://openlayers.org/en/v4.0.1/css/ol.css" type="text/css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="collapse-sidebar.css" />
+    <script src="https://openlayers.org/en/v4.0.1/build/ol.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.1.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/3.4.0/echarts.min.js"></script>
+    <script src="nav_sidebar.js" async defer></script>
+    <script src="gmap.js" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?region=cn&language=zh-CN&key=AIzaSyDVuM5lBEKtvdpUb1xNkPa-C38ToZWx8Ws&callback=ShowingMap" async defer></script>
+</head>
+
+<body>
+    <div class="container">
+        <nav class="navbar fixed-top navbar-light navbar-toggleable-sm bg-faded">
+            <div class="navbar-header">
+                <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+               <span class="navbar-toggler-icon"></span>
+                </button>
+                <a class="navbar-brand" href="#">网站标题</a>
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#">链接<span class="sr-only">(current)</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">链接2</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">链接3</a>
+                    </li>
+                    <li class="nav-item">
+                        <form class="form-inline mr-2">
+                            <input class="form-control mr-sm-2" type="text" placeholder="Search">
+                            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                        </form>
+                    </li>
+                    <li class="nav-item">
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">下拉菜单
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <a class="dropdown-item" href="#">Action</a>
+                                <a class="dropdown-item" href="#">Another action</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#">Something else here</a>
+                            </div>
+                        </div>
+                    </li>
+
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="nav-item mr-1">
+                        <a class="nav-link" href="#">链接4<span class="sr-only">(current)</span></a>
+                    </li>
+                    <li class="nav-item mr-auto">
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle mr-auto" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">下拉2
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                                <a class="dropdown-item" href="#">Action</a>
+                                <a class="dropdown-item" href="#">Another action</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#">Something else</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </nav>
+    </div>
+    </nav>
+    <div class="navbar-offset"></div>
+    <div id="gmap">
+    </div>
+    <div id='ControlDiv'>
+    </div>
+    <div class="row main-row">
+        <div class="col-lg-4 col-xl-3 sidebar sidebar-left pull-left">
+            <div class='card sidebar-body' id="accordion-left">
+                <div class="card-header">
+                    <h4 class="card-title">
+                        <a data-toggle="collapse" href="#layers">
+                            <i class="fa fa-list-alt mr-1"></i> Layers
+                        </a>
+                        <span class="pull-right slide-submenu">
+                    <i class="fa fa-chevron-left"></i>
+                  </span>
+                    </h4>
+                </div>
+                <div id="layers" class="card-collapse collapse in">
+                    <div class="card-group">
+                        <div class="btn-group-vertical card-block" data-toggle="buttons">
+                            <label class="btn btn-secondary">
+                        <input type="checkbox" id="checkBingMap" autocomplete="off"> BingMap
+                        </label>
+                            <label class="btn btn-secondary">
+                        <input type="checkbox" id="checkOSM" autocomplete="off"> OpenStreetMap
+                        </label>
+                            <label class="btn btn-secondary active">
+                        <input type="checkbox" id="checkRS" checked autocomplete="off"> 遥感影像
+                        </label>
+                            <label class="btn btn-secondary active">
+                        <input type="checkbox" id="checkVectorTile" checked autocomplete="off"> 地块矢量边界
+                        </label>
+                            <label class="btn btn-secondary active">
+                        <input type="checkbox" id="checkHighlight" checked autocomplete="off"> 已选和绘制的边界
+                        </label>
+                        </div>
+                        <div id="ModifyControls" class="card-block">
+                            <h5 class="card-title">编辑：</h5>
+                            <button type="button" class="btn btn-secondary mt-1" id="EditButton" data-toggle="button" aria-pressed="false" autocomplete="off">开始编辑
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-header">
+                    <h4 class="card-title">
+                        <a data-toggle="collapse" href="#properties">
+                            <i class="fa fa-list-alt mr-1"></i> Properties
+                        </a>
+                    </h4>
+                </div>
+                <div id="properties" class="card-collapse collapse in">
+                    <div id="LandInformationText" class="card-block">
+                        <h4 class="card-title">地块ID：</h4>
+                        <p id="info" class="card-text">&nbsp</p>
+                    </div>
+                    <div id="SelectedParcels" class="card-block">
+                        <h4 class="card-title">选中地块：</h4>
+                        <p id="ParcelsGeometry" class="card-text">&nbsp</p>
+                        <a href="#" class="btn btn-secondary">也许需要一个链接</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-xl-6 mid"></div>
+        <div class="col-lg-4 col-xl-3 sidebar sidebar-right pull-right">
+            <div class="card sidebar-body" id="accordion-right">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">
+                            <a data-toggle="collapse" href="#taskpane">
+                                <i class="fa fa-tasks mr-1"></i> 图表
+                            </a>
+                            <span class="pull-right slide-submenu">
+                    <i class="fa fa-chevron-right"></i>
+                  </span>
+                        </h4>
+                    </div>
+                    <div id="taskpane" class="card-collapse collapse show">
+                        <div id="Charts">
+                            <div id="Line">
+                            </div>
+                            <div id="Pie"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mini-submenu mini-submenu-left pull-left">
+        <i class="fa fa-list-alt"></i>
+    </div>
+    <div class="mini-submenu mini-submenu-right pull-right">
+        <i class="fa fa-tasks"></i>
+    </div>
+    </div>
+</body>
+
+</html>
