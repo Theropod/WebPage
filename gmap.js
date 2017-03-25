@@ -1,13 +1,13 @@
 //OSM是最下层layer,上面是vectorlayer显示countries，再上面是featureoverlay
 //所有用到google map api的都在这ShowingMap的一个函数里，这个函数名写道使用api的那一句里面。
-var gmap;
-
 /**
  * 定义一个openlayers的map，作为control加到GoogleMap上面
  * This constructor takes the DIV as an argument.
  * @constructor
  */
-function OlMap_GmapControl(gmap) {
+var olmap;
+
+function OlMap_GmapControl() {
     var olMapDiv = document.createElement('div');
     olMapDiv.id = "olMapDiv";
 
@@ -41,7 +41,7 @@ function OlMap_GmapControl(gmap) {
 
     //map-----------------------------------------------------------------------
 
-    var olmap = new ol.Map({
+    olmap = new ol.Map({
         interactions: ol.interaction.defaults({
             altShiftDragRotate: false,
             dragPan: false,
@@ -53,9 +53,13 @@ function OlMap_GmapControl(gmap) {
         view: view
     });
 
+    window.onload = (function() {
+        olmap.updateSize();
+    });
+
     window.onresize = function() {
         setTimeout(function() {
-           olmap.updateSize();
+            olmap.updateSize();
         }, 200);
     };
     //Vectorlayer-----------------------------------------------------------------------
@@ -238,6 +242,17 @@ function OlMap_GmapControl(gmap) {
             myPie.resize();
         }, 200);
     };
+
+    $('.sidebar-right .card-title').on('click', 'a', function() {
+        if ($('#Chartpane').hasClass('show')) {} else {
+            //等card展开完了再resize,否则charts没有显示的地方
+            setTimeout(function() {
+                myChart.resize();
+                myPie.resize();
+            }, 200);
+        }
+    });
+
     //交互-----------------------------------------------------------------------
     //用来高亮的Layer
     var drawnfeatures = new ol.Collection();
@@ -420,6 +435,7 @@ function OlMap_GmapControl(gmap) {
     //不update的话canvas还是会变成display:none
     ControlDiv.appendChild(olMapDiv);
     olmap.updateSize();
+    return olmap;
 }
 
 function ShowingMap() {
@@ -439,7 +455,7 @@ function ShowingMap() {
         streetViewControl: false
     });
     // Create the DIV to hold the control and call the OlMap_GmapControl() constructor and pass in this DIV.
-    var olMap_gmapControl = new OlMap_GmapControl(gmap);
+    olmap = OlMap_GmapControl();
     gmap.controls[google.maps.ControlPosition.TOP_LEFT].push(ControlDiv);
     ControlDiv.parentNode.removeChild(ControlDiv);
 }
